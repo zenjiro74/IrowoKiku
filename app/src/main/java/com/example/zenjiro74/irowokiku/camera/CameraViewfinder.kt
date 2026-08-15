@@ -2,6 +2,7 @@ package com.example.zenjiro74.irowokiku.camera
 
 import android.content.Context
 import android.util.Size
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -13,14 +14,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
@@ -29,16 +33,22 @@ import kotlin.coroutines.resumeWithException
 /** 解析に流す映像サイズ。色の統計量が欲しいだけなので高解像度は不要。 */
 private val ANALYSIS_RESOLUTION = Size(640, 480)
 
+/** AE/AWB がひとまず収束するまでの待ち時間。ロック要求はこれを待ってから出す。 */
+private const val AUTO_EXPOSURE_WARM_UP_MILLIS = 1_000L
+
 /**
  * 背面カメラのプレビューを表示しつつ、同じカメラのフレームを [analyzer] に流す。
  *
  * 解析は専用の単一スレッドで回し、バックプレッシャは KEEP_ONLY_LATEST。
  * 解析が遅れてもフレームがキューに溜まらず、常に最新フレームだけを見る。
+ *
+ * [lockExposureAndWhiteBalance] が true のときは AE/AWB をロックする。
  */
 @Composable
 fun CameraViewfinder(
     analyzer: ImageAnalysis.Analyzer,
     modifier: Modifier = Modifier,
+    lockExposureAndWhiteBalance: Boolean = false,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -50,6 +60,7 @@ fun CameraViewfinder(
             scaleType = PreviewView.ScaleType.FILL_CENTER
         }
     }
+    var camera by remember { mutableStateOf<Camera?>(null) }
     val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
     DisposableEffect(analysisExecutor) {
         onDispose { analysisExecutor.shutdown() }
@@ -83,7 +94,7 @@ fun CameraViewfinder(
             }
 
         provider.unbindAll()
-        provider.bindToLifecycle(
+        camera = provider.bindToLifecycle(
             lifecycleOwner,
             CameraSelector.DEFAULT_BACK_CAMERA,
             preview,
@@ -93,9 +104,17 @@ fun CameraViewfinder(
         try {
             awaitCancellation()
         } finally {
+            camera = null
             imageAnalysis.clearAnalyzer()
             provider.unbindAll()
         }
+    }
+
+    LaunchedEffect(camera, lockExposureAndWhiteBalance) {
+        val boundCamera = camera ?: return@LaunchedEffect
+        // 露出/WB が動いている最中にロックすると中途半端な状態で固まるので、収束を待つ。
+        if (lockExposureAndWhiteBalance) delay(AUTO_EXPOSURE_WARM_UP_MILLIS)
+        boundCamera.setAutoExposureAndWhiteBalanceLocked(lockExposureAndWhiteBalance)
     }
 
     AndroidView(factory = { previewView }, modifier = modifier)

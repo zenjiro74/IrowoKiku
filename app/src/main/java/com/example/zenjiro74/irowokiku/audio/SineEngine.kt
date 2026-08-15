@@ -31,8 +31,14 @@ class SineEngine(
     @Volatile
     private var running = false
 
+    @Volatile
+    private var muted = false
+
     val isRunning: Boolean
         get() = running
+
+    val isMuted: Boolean
+        get() = muted
 
     /** 現在鳴っている周波数。ポルタメント中の実値なので HUD 表示に使える。 */
     val currentFrequency: Float
@@ -75,7 +81,7 @@ class SineEngine(
 
         oscillator.snapFrequency(initialFrequencyHz)
         // 0 から立ち上げることで開始時のプチッというクリックを避ける。
-        oscillator.targetAmplitude = peakAmplitude
+        oscillator.targetAmplitude = if (muted) 0f else peakAmplitude
 
         track = newTrack
         running = true
@@ -90,6 +96,17 @@ class SineEngine(
     /** 目標周波数を変える。実際の遷移はポルタメントで滑らかに行われる。 */
     fun setFrequency(hz: Float) {
         oscillator.targetFrequencyHz = hz
+    }
+
+    /**
+     * 再生を続けたまま音量だけ落とす。振幅ランプ越しに効くのでクリックは出ない。
+     * 暗所で指標が信用できないときに、停止ではなくミュートで凌ぐために使う。
+     */
+    fun setMuted(muted: Boolean) {
+        this.muted = muted
+        if (running) {
+            oscillator.targetAmplitude = if (muted) 0f else peakAmplitude
+        }
     }
 
     /** フェードアウトを鳴らし切ってから停止する。 */

@@ -34,9 +34,13 @@ class FrequencyMapping(
         const val DEFAULT_MIN_FREQUENCY_HZ = 110f
         const val DEFAULT_MAX_FREQUENCY_HZ = 1760f
 
-        // 実測に基づく初期値。ステップ5で調整する。
-        const val DEFAULT_MIN_COLORFULNESS = 5f
-        const val DEFAULT_MAX_COLORFULNESS = 80f
+        // Hasler–Süsstrunk 論文の官能評価スケールに合わせる。
+        //   0 not colorful / 15 slightly / 33 moderately / 45 average
+        //   59 quite / 82 highly / 109 extremely
+        // 実際にカメラを向けるのはほとんど "slightly"〜"highly" の帯なので、
+        // その範囲を 4 オクターブいっぱいに使う。
+        const val DEFAULT_MIN_COLORFULNESS = 15f
+        const val DEFAULT_MAX_COLORFULNESS = 82f
     }
 }
 

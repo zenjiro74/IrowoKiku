@@ -42,6 +42,21 @@ class FrequencyMappingTest {
     }
 
     @Test
+    fun `既定レンジは Hasler-Susstrunk の官能スケールに沿う`() {
+        val default = FrequencyMapping()
+
+        // "slightly colorful" 以下は最低音、"highly colorful" 以上は最高音。
+        assertEquals(110.0, default.toFrequency(15f).toDouble(), 0.01)
+        assertEquals(1760.0, default.toFrequency(82f).toDouble(), 0.01)
+
+        // "moderately"(33) と "quite"(59) はその間に単調に収まる。
+        val moderately = default.toFrequency(33f)
+        val quite = default.toFrequency(59f)
+        assertTrue("$moderately < $quite が成り立たない", moderately < quite)
+        assertTrue(moderately > 110f && quite < 1760f)
+    }
+
+    @Test
     fun `等間隔の colorfulness は等しい音程差になる`() {
         // 対数マッピングなので、指標が 25 増えるごとに周波数比は一定 (1 オクターブ)。
         val ratios = listOf(0f, 25f, 50f, 75f, 100f)

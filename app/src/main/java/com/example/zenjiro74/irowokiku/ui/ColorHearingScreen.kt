@@ -34,7 +34,11 @@ fun ColorHearingScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        CameraViewfinder(analyzer = viewModel.analyzer, modifier = Modifier.fillMaxSize())
+        CameraViewfinder(
+            analyzer = viewModel.analyzer,
+            modifier = Modifier.fillMaxSize(),
+            lockExposureAndWhiteBalance = uiState.isExposureLocked,
+        )
 
         Column(
             modifier = Modifier
@@ -46,6 +50,10 @@ fun ColorHearingScreen(
         ) {
             Text("colorfulness %.1f".format(uiState.colorfulness))
             Text("%.1f Hz".format(uiState.frequencyHz))
+            if (uiState.isTooDark) Text("暗すぎます")
+            Button(onClick = { viewModel.setExposureLocked(!uiState.isExposureLocked) }) {
+                Text(if (uiState.isExposureLocked) "AE/AWB ロック中" else "AE/AWB 自動")
+            }
             Button(onClick = viewModel::toggle) {
                 Text(if (uiState.isRunning) "停止" else "開始")
             }

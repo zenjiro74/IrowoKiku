@@ -17,6 +17,10 @@ data class ColorHearingUiState(
     val colorfulness: Float = 0f,
     val meanLuma: Float = 0f,
     val frequencyHz: Float = FrequencyMapping.DEFAULT_MIN_FREQUENCY_HZ,
+    /** 暗すぎて指標が信用できない状態。周波数を保持して音をミュートする。 */
+    val isTooDark: Boolean = false,
+    /** AE/AWB をロックしているか。 */
+    val isExposureLocked: Boolean = true,
 )
 
 /**
@@ -40,31 +44,49 @@ class ColorHearingViewModel : ViewModel() {
     private var frameCount = 0L
 
     private fun onFrame(stats: FrameStats) {
+        // 暗所ではセンサノイズが rg/yb の分散を押し上げ、無彩色の被写体でも
+        // 指標が跳ね上がる。信用できないので周波数を据え置いて音を止める。
+        val isTooDark = stats.meanLuma < DARK_LUMA_THRESHOLD
+        engine.setMuted(isTooDark)
+
+        if (isTooDark) {
+            logMeasurement(stats, _uiState.value.colorfulness, _uiState.value.frequencyHz)
+            _uiState.update { it.copy(meanLuma = stats.meanLuma, isTooDark = true) }
+            return
+        }
+
         val colorfulness = smoother.update(stats.colorfulness)
         val frequencyHz = mapping.toFrequency(colorfulness)
 
         engine.setFrequency(frequencyHz)
-
-        // レンジ調整のための実測ログ。数フレームに 1 回だけ出す。
-        if (frameCount++ % LOG_INTERVAL_FRAMES == 0L) {
-            Log.d(
-                TAG,
-                "#$frameCount raw=%.1f smoothed=%.1f luma=%.1f -> %.1fHz".format(
-                    stats.colorfulness,
-                    colorfulness,
-                    stats.meanLuma,
-                    frequencyHz,
-                ),
-            )
-        }
+        logMeasurement(stats, colorfulness, frequencyHz)
 
         _uiState.update {
             it.copy(
                 colorfulness = colorfulness,
                 meanLuma = stats.meanLuma,
                 frequencyHz = frequencyHz,
+                isTooDark = false,
             )
         }
+    }
+
+    /** レンジ調整のための実測ログ。数フレームに 1 回だけ出す。 */
+    private fun logMeasurement(stats: FrameStats, smoothed: Float, frequencyHz: Float) {
+        if (frameCount++ % LOG_INTERVAL_FRAMES != 0L) return
+        Log.d(
+            TAG,
+            "#$frameCount raw=%.1f smoothed=%.1f luma=%.1f -> %.1fHz".format(
+                stats.colorfulness,
+                smoothed,
+                stats.meanLuma,
+                frequencyHz,
+            ),
+        )
+    }
+
+    fun setExposureLocked(locked: Boolean) {
+        _uiState.update { it.copy(isExposureLocked = locked) }
     }
 
     fun toggle() {
@@ -89,5 +111,8 @@ class ColorHearingViewModel : ViewModel() {
     private companion object {
         const val TAG = "IrowoKiku"
         const val LOG_INTERVAL_FRAMES = 15L
+
+        /** これを下回る平均輝度 (0-255) では指標をノイズとみなす。 */
+        const val DARK_LUMA_THRESHOLD = 30f
     }
 }
