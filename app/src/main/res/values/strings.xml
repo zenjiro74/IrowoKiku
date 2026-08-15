@@ -1,6 +1,17 @@
 <resources>
     <string name="app_name">色を聞く</string>
+
     <string name="camera_permission_rationale">カメラ映像の色から音を作るため、カメラの使用を許可してください。</string>
     <string name="grant_camera_permission">カメラを許可</string>
     <string name="open_app_settings">設定を開く</string>
+
+    <string name="hud_pitch">%1$s · %2$.1f Hz</string>
+    <string name="hud_colorfulness">colorfulness %1$.1f</string>
+    <string name="hud_luma">輝度 %1$.0f</string>
+    <string name="hud_too_dark">暗すぎるので指標が信用できません</string>
+
+    <string name="action_start">開始</string>
+    <string name="action_stop">停止</string>
+    <string name="action_exposure_locked">AE/AWB ロック中</string>
+    <string name="action_exposure_auto">AE/AWB 自動</string>
 </resources>

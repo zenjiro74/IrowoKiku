@@ -1,5 +1,6 @@
 package com.example.zenjiro74.irowokiku.mapping
 
+import kotlin.math.ln
 import kotlin.math.pow
 
 /**
@@ -28,6 +29,14 @@ class FrequencyMapping(
         val t = ((colorfulness - minColorfulness) / (maxColorfulness - minColorfulness))
             .coerceIn(0f, 1f)
         return (minFrequencyHz * ratio.pow(t.toDouble())).toFloat()
+    }
+
+    /** [frequencyHz] がレンジのどこにあるか (0..1)。HUD のバー表示用。 */
+    fun normalizedPosition(frequencyHz: Float): Float {
+        if (frequencyHz <= 0f) return 0f
+        return (ln(frequencyHz / minFrequencyHz.toDouble()) / ln(ratio))
+            .toFloat()
+            .coerceIn(0f, 1f)
     }
 
     companion object {

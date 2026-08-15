@@ -17,6 +17,8 @@ data class ColorHearingUiState(
     val colorfulness: Float = 0f,
     val meanLuma: Float = 0f,
     val frequencyHz: Float = FrequencyMapping.DEFAULT_MIN_FREQUENCY_HZ,
+    /** 周波数レンジ内の位置 (0..1)。HUD のバー表示用。 */
+    val pitchPosition: Float = 0f,
     /** 暗すぎて指標が信用できない状態。周波数を保持して音をミュートする。 */
     val isTooDark: Boolean = false,
     /** AE/AWB をロックしているか。 */
@@ -66,6 +68,7 @@ class ColorHearingViewModel : ViewModel() {
                 colorfulness = colorfulness,
                 meanLuma = stats.meanLuma,
                 frequencyHz = frequencyHz,
+                pitchPosition = mapping.normalizedPosition(frequencyHz),
                 isTooDark = false,
             )
         }
