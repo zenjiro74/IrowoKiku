@@ -4,8 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.zenjiro74.irowokiku.ui.CameraPermissionGate
-import com.example.zenjiro74.irowokiku.ui.ColorHearingScreen
+import com.example.zenjiro74.irowokiku.ui.IrowoKikuApp
 import com.example.zenjiro74.irowokiku.ui.theme.IrowoKikuTheme
 
 class MainActivity : ComponentActivity() {
@@ -15,9 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IrowoKikuTheme {
-                CameraPermissionGate {
-                    ColorHearingScreen()
-                }
+                IrowoKikuApp()
             }
         }
     }

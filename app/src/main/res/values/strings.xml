@@ -14,4 +14,31 @@
     <string name="action_stop">停止</string>
     <string name="action_exposure_locked">AE/AWB ロック中</string>
     <string name="action_exposure_auto">AE/AWB 自動</string>
+
+    <string name="action_menu">メニュー</string>
+    <string name="action_back">戻る</string>
+
+    <string name="screen_help">使い方</string>
+    <string name="screen_licenses">オープンソースライセンス</string>
+
+    <string name="help_intro">カメラに映るものの「カラフルさ」を測り、その値を音の高さに変えて鳴らします。彩度が豊かなものほど高い音になります。</string>
+
+    <string name="help_usage_title">使い方</string>
+    <string name="help_usage_body">開始を押すと音が鳴りはじめます。カメラをいろいろなものに向けてみてください。無彩色の壁では低く、色数の多いものでは高く鳴ります。音は途切れずになめらかに変化します。</string>
+
+    <string name="help_readout_title">画面の表示</string>
+    <string name="help_readout_body">上段は今鳴っている音名と周波数です。バーは 110Hz(A2) から 1760Hz(A6) までの 4 オクターブのどこにいるかを示します。下段の colorfulness が測定値、輝度は画面全体の明るさです。</string>
+
+    <string name="help_lock_title">AE/AWB ロック</string>
+    <string name="help_lock_body">カメラは自動で露出とホワイトバランスを合わせようとするため、放っておくと色かぶりが打ち消され、どこを向けても測定値が似通ってしまいます。ロックすると今の設定で固定され、被写体ごとの色の差がはっきり出ます。</string>
+
+    <string name="help_dark_title">暗いところでは鳴りません</string>
+    <string name="help_dark_body">暗い場所ではセンサーのノイズが色のばらつきとして測られ、実際にはカラフルでないものが高い値になります。明るさが足りない間は音を止め、画面に警告を出します。</string>
+
+    <string name="help_metric_title">測定について</string>
+    <string name="help_metric_body">Hasler と Süsstrunk による colorfulness metric を使っています。赤と緑の差、青と黄の差それぞれのばらつきと偏りから、人が感じる色の豊かさを 1 つの数値にする方法です。論文の官能評価スケールに合わせ、15(わずかにカラフル)から 82(非常にカラフル)を 4 オクターブに割り当てています。</string>
+
+    <string name="licenses_intro">このアプリは以下のオープンソースソフトウェアを利用しています。一覧はビルド時に依存関係から自動生成しています。</string>
+    <string name="licenses_artifact_count">%1$d 個のアーティファクト</string>
+    <string name="licenses_show_text">ライセンス全文</string>
 </resources>

@@ -12,8 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,10 +26,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -39,6 +48,8 @@ import com.example.zenjiro74.irowokiku.mapping.noteNameOf
  */
 @Composable
 fun ColorHearingScreen(
+    onOpenHelp: () -> Unit,
+    onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ColorHearingViewModel = viewModel(),
 ) {
@@ -61,6 +72,15 @@ fun ColorHearingScreen(
             analyzer = viewModel.analyzer,
             modifier = Modifier.fillMaxSize(),
             lockExposureAndWhiteBalance = uiState.isExposureLocked,
+        )
+
+        MenuButton(
+            onOpenHelp = onOpenHelp,
+            onOpenLicenses = onOpenLicenses,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .safeDrawingPadding()
+                .padding(8.dp),
         )
 
         Column(
@@ -162,5 +182,49 @@ private fun PitchBar(position: Float) {
                 .fillMaxWidth(animated.coerceIn(0.001f, 1f))
                 .background(MaterialTheme.colorScheme.primary),
         )
+    }
+}
+
+/**
+ * HUD の邪魔をしないよう右上に小さく置く。ヘルプとライセンスへの入口。
+ */
+@Composable
+private fun MenuButton(
+    onOpenHelp: () -> Unit,
+    onOpenLicenses: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        ) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_menu),
+                    contentDescription = stringResource(R.string.action_menu),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.screen_help)) },
+                onClick = {
+                    expanded = false
+                    onOpenHelp()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.screen_licenses)) },
+                onClick = {
+                    expanded = false
+                    onOpenLicenses()
+                },
+            )
+        }
     }
 }
