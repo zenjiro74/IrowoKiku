@@ -27,8 +27,12 @@
 audio/     SineOscillator (純 DSP) / SineEngine (AudioTrack ラッパ)
 camera/    Colorfulness (純関数) / ColorfulnessAnalyzer / CameraViewfinder / ExposureLock
 mapping/   FrequencyMapping / ExponentialSmoother / noteNameOf
-ui/        ColorHearingScreen (Compose) / ColorHearingViewModel
+about/     OssLicenses (生成済み一覧の読み込み)
+ui/        ColorHearingScreen / HelpScreen / LicensesScreen (Compose)
 ```
+
+画面はカメラ・使い方・ライセンスの 3 つだけなので、Navigation ライブラリは入れず
+Compose の状態遷移で切り替えている。
 
 DSP と指標計算は Android API に依存させず、JVM 単体テストで検証している。
 
@@ -44,3 +48,29 @@ DSP と指標計算は Android API に依存させず、JVM 単体テストで�
 
 エミュレータでも動くが、仮想シーンのカメラはフレームレートが極端に低く指標がほとんど
 動かないため、実際の挙動確認には実機を推奨。
+
+## オープンソースライセンス表示
+
+アプリ内の「オープンソースライセンス」画面の元データは、ビルド時に
+`generateOssLicenses` タスクが `assets/oss_licenses.json` へ生成する。
+
+- **収録物の列挙は自動**。解決済みの依存グラフから APK に入るアーティファクトを
+  拾うので、依存を足しても一覧が古くならない
+- **ライセンスの判定は対応表に固定**。`app/licenses/known-licenses.json` に
+  グループ単位で書いている。POM の `<licenses>` を機械的に読む方式は取れない
+  (guava と auto-value は親 POM にしか記載が無い) ため、人手で確認した対応を置く
+- **対応表に無いグループが入るとビルドが落ちる**。依存追加時に更新漏れで
+  ライセンス表示が不正確になるのを防ぐため
+
+現状は 106 アーティファクト / 14 プロジェクト。`org.checkerframework` だけが MIT で、
+残りは Apache-2.0。両方の全文を `assets/licenses/` に同梱しオフラインでも読める。
+
+依存を追加してビルドが落ちたら、`app/licenses/known-licenses.json` の `groups` に
+グループと `project` / `url` / `license` を足す。新しいライセンス種別なら `licenses` に
+定義を足し、全文を `app/src/main/assets/licenses/` に置く。
+
+## アイコン
+
+`ic_launcher_foreground.xml` は生成物で、元は
+`scripts/generate_launcher_icon.py`。色相環の扇形と正弦波のパスを計算して吐く。
+形を変えるときは XML を直接いじらずスクリプト側を編集して再生成する。
