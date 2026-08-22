@@ -1,0 +1,95 @@
+{
+  "_comment": [
+    "APK に同梱される依存とライセンスの対応表。artifacts の列挙は generateOssLicenses タスクが",
+    "解決済み依存グラフから自動で行うので、ここには『どのグループがどのライセンスか』だけを書く。",
+    "POM の <licenses> を機械的に読むだけでは足りない (guava / auto-value は親 POM にしか",
+    "記載がない) ため、人手で確認した対応をここに固定している。",
+    "未知のグループが依存に入るとビルドが失敗するので、追加時にここを更新すること。"
+  ],
+
+  "licenses": {
+    "apache-2.0": {
+      "name": "Apache License 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "asset": "licenses/apache-2.0.txt"
+    },
+    "mit": {
+      "name": "MIT License",
+      "url": "https://opensource.org/license/mit",
+      "asset": "licenses/mit.txt"
+    }
+  },
+
+  "groups": {
+    "androidx.": {
+      "project": "AndroidX (Jetpack)",
+      "url": "https://developer.android.com/jetpack/androidx",
+      "license": "apache-2.0"
+    },
+    "com.google.guava": {
+      "project": "Guava",
+      "url": "https://github.com/google/guava",
+      "license": "apache-2.0"
+    },
+    "com.google.dagger": {
+      "project": "Dagger",
+      "url": "https://dagger.dev/",
+      "license": "apache-2.0"
+    },
+    "com.google.auto.value": {
+      "project": "AutoValue",
+      "url": "https://github.com/google/auto/tree/main/value",
+      "license": "apache-2.0"
+    },
+    "com.google.errorprone": {
+      "project": "Error Prone",
+      "url": "https://errorprone.info/",
+      "license": "apache-2.0"
+    },
+    "com.google.j2objc": {
+      "project": "J2ObjC Annotations",
+      "url": "https://github.com/google/j2objc",
+      "license": "apache-2.0"
+    },
+    "com.google.code.findbugs": {
+      "project": "FindBugs JSR 305",
+      "url": "https://github.com/findbugsproject/findbugs",
+      "license": "apache-2.0"
+    },
+    "org.jetbrains.kotlin": {
+      "project": "Kotlin",
+      "url": "https://kotlinlang.org/",
+      "license": "apache-2.0"
+    },
+    "org.jetbrains.kotlinx": {
+      "project": "kotlinx (coroutines / atomicfu)",
+      "url": "https://github.com/Kotlin",
+      "license": "apache-2.0"
+    },
+    "org.jetbrains": {
+      "project": "JetBrains Java Annotations",
+      "url": "https://github.com/JetBrains/java-annotations",
+      "license": "apache-2.0"
+    },
+    "org.jspecify": {
+      "project": "JSpecify",
+      "url": "https://jspecify.dev/",
+      "license": "apache-2.0"
+    },
+    "org.checkerframework": {
+      "project": "Checker Framework Annotations",
+      "url": "https://checkerframework.org/",
+      "license": "mit"
+    },
+    "javax.inject": {
+      "project": "javax.inject",
+      "url": "https://github.com/javax-inject/javax-inject",
+      "license": "apache-2.0"
+    },
+    "jakarta.inject": {
+      "project": "Jakarta Dependency Injection",
+      "url": "https://github.com/jakartaee/inject",
+      "license": "apache-2.0"
+    }
+  }
+}
