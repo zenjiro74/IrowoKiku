@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,38 +39,40 @@ fun LicensesScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val entries = remember { OssLicenses.load(context.assets) }
 
-    // 全文表示中はそちらを閉じるのが「戻る」の意味になる。
-    var shownLicense by remember { mutableStateOf<OssLicense?>(null) }
+    // 全文表示は画面回転やプロセス復帰をまたいでも維持したいので saveable な id で持つ。
+    var shownLicenseId by rememberSaveable { mutableStateOf<String?>(null) }
+    val shownLicense = entries.firstOrNull { it.license.id == shownLicenseId }?.license
 
-    val license = shownLicense
-    if (license != null) {
-        LicenseTextScreen(
-            license = license,
-            onBack = { shownLicense = null },
+    when {
+        shownLicense != null -> LicenseTextScreen(
+            license = shownLicense,
+            onBack = { shownLicenseId = null },
             modifier = modifier,
         )
-        return
-    }
 
-    AboutScaffold(
-        title = stringResource(R.string.screen_licenses),
-        onBack = onBack,
-        modifier = modifier,
-    ) { contentModifier ->
-        LazyColumn(
-            modifier = contentModifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.licenses_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            }
-            items(entries, key = { it.project }) { entry ->
-                LicenseCard(entry = entry, onShowText = { shownLicense = entry.license })
+        else -> AboutScaffold(
+            title = stringResource(R.string.screen_licenses),
+            onBack = onBack,
+            modifier = modifier,
+        ) { contentModifier ->
+            LazyColumn(
+                modifier = contentModifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item {
+                    Text(
+                        text = stringResource(R.string.licenses_intro),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
+                items(entries, key = { it.project }) { entry ->
+                    LicenseCard(
+                        entry = entry,
+                        onShowText = { shownLicenseId = entry.license.id },
+                    )
+                }
             }
         }
     }
@@ -130,7 +133,7 @@ private fun LicenseTextScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val text = remember(license.id) { OssLicenses.readLicenseText(context.assets, license) }
+    val text = remember(license) { OssLicenses.readLicenseText(context.assets, license) }
 
     AboutScaffold(title = license.name, onBack = onBack, modifier = modifier) { contentModifier ->
         Column(

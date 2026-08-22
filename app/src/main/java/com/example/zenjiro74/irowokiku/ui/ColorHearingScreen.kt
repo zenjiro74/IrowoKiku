@@ -1,12 +1,10 @@
 package com.example.zenjiro74.irowokiku.ui
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +17,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,7 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -95,7 +94,7 @@ fun ColorHearingScreen(
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilledTonalButton(
-                    onClick = { viewModel.setExposureLocked(!uiState.isExposureLocked) },
+                    onClick = viewModel::toggleExposureLock,
                 ) {
                     Text(
                         stringResource(
@@ -145,8 +144,11 @@ private fun ReadoutCard(uiState: ColorHearingUiState) {
             PitchBar(position = uiState.pitchPosition)
 
             Text(
-                text = stringResource(R.string.hud_colorfulness, uiState.colorfulness) +
-                    "   " + stringResource(R.string.hud_luma, uiState.meanLuma),
+                text = stringResource(
+                    R.string.hud_metrics,
+                    uiState.colorfulness,
+                    uiState.meanLuma,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -162,27 +164,24 @@ private fun ReadoutCard(uiState: ColorHearingUiState) {
     }
 }
 
-/** 110Hz〜1760Hz のどこにいるかを示す横バー。位置は対数スケール。 */
+/** 周波数レンジのどこにいるかを示す横バー。位置は colorfulness の正規化値。 */
 @Composable
 private fun PitchBar(position: Float) {
     // 生の値は 30fps で細かく動くので、表示だけ少し慣性を持たせる。
     val animated by animateFloatAsState(targetValue = position, label = "pitch")
 
-    Box(
+    LinearProgressIndicator(
+        progress = { animated },
         modifier = Modifier
             .fillMaxWidth()
-            .height(6.dp)
-            .clip(RoundedCornerShape(3.dp))
-            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                // fillMaxWidth は 0 を受け付けないので、下限を僅かに持たせる。
-                .fillMaxWidth(animated.coerceIn(0.001f, 1f))
-                .background(MaterialTheme.colorScheme.primary),
-        )
-    }
+            .height(6.dp),
+        color = MaterialTheme.colorScheme.primary,
+        trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+        strokeCap = StrokeCap.Round,
+        // 既定では区切りの隙間と終端マーカーが描かれる。ここでは要らない。
+        gapSize = 0.dp,
+        drawStopIndicator = {},
+    )
 }
 
 /**

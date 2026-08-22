@@ -86,7 +86,7 @@ FOREGROUND = f'''<?xml version="1.0" encoding="utf-8"?>
 
 # Themed icons render as a single tint colour, so the ring has to be an outline
 # rather than a filled donut — a filled one would merge with the wave.
-MONO_WAVE = sine_path(x0=CX - RO - 2, x1=CX + RO + 2, amp=8.5, cycles=1.75)
+# The wave itself is shared with the colour icon so the two cannot drift apart.
 MONOCHROME = f'''<?xml version="1.0" encoding="utf-8"?>
 <!--
   テーマアイコン用。単色で塗られるため、色相環は塗りではなく輪郭線で表す。
@@ -104,7 +104,7 @@ MONOCHROME = f'''<?xml version="1.0" encoding="utf-8"?>
         android:strokeColor="#FFFFFFFF"
         android:strokeWidth="4" />
     <path
-        android:pathData="{MONO_WAVE}"
+        android:pathData="{WAVE}"
         android:strokeColor="#FFFFFFFF"
         android:strokeWidth="4.5"
         android:strokeLineCap="round"

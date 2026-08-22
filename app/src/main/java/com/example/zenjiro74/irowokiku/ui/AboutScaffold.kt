@@ -1,6 +1,5 @@
 package com.example.zenjiro74.irowokiku.ui
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,8 +52,6 @@ fun AboutScaffold(
             )
         },
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            content(Modifier.padding(padding))
-        }
+        content(Modifier.padding(padding))
     }
 }

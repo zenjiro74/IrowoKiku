@@ -40,19 +40,29 @@ class NormalizedPositionTest {
 
     @Test
     fun `レンジの下端と上端が 0 と 1 になる`() {
-        assertEquals(0.0, mapping.normalizedPosition(110f).toDouble(), 1e-5)
-        assertEquals(1.0, mapping.normalizedPosition(1760f).toDouble(), 1e-5)
+        assertEquals(0.0, mapping.normalizedPosition(mapping.minColorfulness).toDouble(), 1e-5)
+        assertEquals(1.0, mapping.normalizedPosition(mapping.maxColorfulness).toDouble(), 1e-5)
     }
 
     @Test
-    fun `対数スケールなので中央は 440Hz`() {
-        assertEquals(0.5, mapping.normalizedPosition(440f).toDouble(), 1e-5)
+    fun `レンジの中央が 0_5 になる`() {
+        val middle = (mapping.minColorfulness + mapping.maxColorfulness) / 2f
+        assertEquals(0.5, mapping.normalizedPosition(middle).toDouble(), 1e-5)
     }
 
     @Test
     fun `レンジ外はクランプされる`() {
-        assertEquals(0.0, mapping.normalizedPosition(50f).toDouble(), 1e-5)
         assertEquals(0.0, mapping.normalizedPosition(0f).toDouble(), 1e-5)
-        assertEquals(1.0, mapping.normalizedPosition(5000f).toDouble(), 1e-5)
+        assertEquals(0.0, mapping.normalizedPosition(-10f).toDouble(), 1e-5)
+        assertEquals(1.0, mapping.normalizedPosition(1000f).toDouble(), 1e-5)
+    }
+
+    @Test
+    fun `バー位置と周波数が同じ指標から決まる`() {
+        // 位置 0.5 のとき周波数はレンジの幾何平均 (440Hz) になる。
+        // 両者が同じ t を起点にしている限りこの関係は崩れない。
+        val middle = (mapping.minColorfulness + mapping.maxColorfulness) / 2f
+        assertEquals(0.5, mapping.normalizedPosition(middle).toDouble(), 1e-5)
+        assertEquals(440.0, mapping.toFrequency(middle).toDouble(), 0.01)
     }
 }

@@ -1,14 +1,14 @@
 package com.example.zenjiro74.irowokiku.camera
 
-import android.content.Context
 import android.util.Size
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.view.PreviewView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -21,14 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.Executors
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /** 解析に流す映像サイズ。色の統計量が欲しいだけなので高解像度は不要。 */
 private val ANALYSIS_RESOLUTION = Size(640, 480)
@@ -47,8 +43,8 @@ private const val AUTO_EXPOSURE_WARM_UP_MILLIS = 1_000L
 @Composable
 fun CameraViewfinder(
     analyzer: ImageAnalysis.Analyzer,
+    lockExposureAndWhiteBalance: Boolean,
     modifier: Modifier = Modifier,
-    lockExposureAndWhiteBalance: Boolean = false,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -67,7 +63,7 @@ fun CameraViewfinder(
     }
 
     LaunchedEffect(lifecycleOwner) {
-        val provider = context.awaitCameraProvider()
+        val provider = ProcessCameraProvider.awaitInstance(context)
 
         val preview = Preview.Builder().build().apply {
             surfaceProvider = previewView.surfaceProvider
@@ -120,22 +116,3 @@ fun CameraViewfinder(
     AndroidView(factory = { previewView }, modifier = modifier)
 }
 
-/**
- * [ProcessCameraProvider.getInstance] の ListenableFuture を suspend で待つ。
- * CameraX 1.6 には suspend 版の API が無いので、Guava 連携を足さずに自前で橋渡しする。
- */
-private suspend fun Context.awaitCameraProvider(): ProcessCameraProvider =
-    suspendCancellableCoroutine { continuation ->
-        val future = ProcessCameraProvider.getInstance(this)
-        future.addListener(
-            {
-                try {
-                    continuation.resume(future.get())
-                } catch (e: Exception) {
-                    continuation.resumeWithException(e)
-                }
-            },
-            ContextCompat.getMainExecutor(this),
-        )
-        continuation.invokeOnCancellation { future.cancel(false) }
-    }

@@ -1,6 +1,6 @@
 package com.example.zenjiro74.irowokiku.mapping
 
-import kotlin.math.ln
+import kotlin.math.log2
 import kotlin.math.roundToInt
 
 private val NOTE_NAMES = arrayOf(
@@ -19,10 +19,8 @@ fun noteNameOf(frequencyHz: Float): String {
     if (frequencyHz <= 0f) return "-"
 
     val midi = MIDI_A4 + (SEMITONES_PER_OCTAVE * log2(frequencyHz / A4_HZ)).roundToInt()
-    val name = NOTE_NAMES[((midi % SEMITONES_PER_OCTAVE) + SEMITONES_PER_OCTAVE) % SEMITONES_PER_OCTAVE]
+    val name = NOTE_NAMES[midi.mod(SEMITONES_PER_OCTAVE)]
     // MIDI 60 が C4。オクターブ番号は C を境に上がる。
-    val octave = Math.floorDiv(midi, SEMITONES_PER_OCTAVE) - 1
+    val octave = midi.floorDiv(SEMITONES_PER_OCTAVE) - 1
     return "$name$octave"
 }
-
-private fun log2(value: Double): Double = ln(value) / ln(2.0)

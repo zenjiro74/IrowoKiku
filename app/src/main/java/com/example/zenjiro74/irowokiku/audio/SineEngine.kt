@@ -37,12 +37,9 @@ class SineEngine(
     val isRunning: Boolean
         get() = running
 
-    val isMuted: Boolean
-        get() = muted
-
-    /** 現在鳴っている周波数。ポルタメント中の実値なので HUD 表示に使える。 */
-    val currentFrequency: Float
-        get() = oscillator.currentFrequency
+    /** ミュート状態を織り込んだ、いま目指すべき振幅。 */
+    private val activeAmplitude: Float
+        get() = if (muted) 0f else peakAmplitude
 
     /** [initialFrequencyHz] から再生を開始する。既に再生中なら何もしない。 */
     @Synchronized
@@ -81,7 +78,7 @@ class SineEngine(
 
         oscillator.snapFrequency(initialFrequencyHz)
         // 0 から立ち上げることで開始時のプチッというクリックを避ける。
-        oscillator.targetAmplitude = if (muted) 0f else peakAmplitude
+        oscillator.targetAmplitude = activeAmplitude
 
         track = newTrack
         running = true
@@ -98,14 +95,12 @@ class SineEngine(
         oscillator.targetFrequencyHz = hz
     }
 
-    /**
-     * 再生を続けたまま音量だけ落とす。振幅ランプ越しに効くのでクリックは出ない。
-     * 暗所で指標が信用できないときに、停止ではなくミュートで凌ぐために使う。
-     */
+    /** 再生を続けたまま音量だけ落とす。振幅ランプ越しに効くのでクリックは出ない。 */
     fun setMuted(muted: Boolean) {
         this.muted = muted
+        // 停止処理中は playbackLoop がフェードアウト中なので触らない。
         if (running) {
-            oscillator.targetAmplitude = if (muted) 0f else peakAmplitude
+            oscillator.targetAmplitude = activeAmplitude
         }
     }
 

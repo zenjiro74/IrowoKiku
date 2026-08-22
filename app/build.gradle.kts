@@ -21,8 +21,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -42,9 +40,7 @@ android {
 }
 
 dependencies {
-    val composeBom = platform(libs.androidx.compose.bom)
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
+    implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -63,10 +59,6 @@ dependencies {
     implementation(libs.androidx.camera.view)
 
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 /**
@@ -87,6 +79,11 @@ abstract class GenerateOssLicensesTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val knownLicenses: RegularFileProperty
 
+    /** ライセンス全文を置いてある assets のルート。全文の実在確認に使う。 */
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val assetsRoot: DirectoryProperty
+
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
@@ -104,15 +101,19 @@ abstract class GenerateOssLicensesTask : DefaultTask() {
 
         val unmapped = sortedSetOf<String>()
         val byProject = sortedMapOf<String, MutableSet<String>>()
+        val metaByProject = mutableMapOf<String, Map<String, String>>()
 
         for (coordinate in artifactCoordinates.get()) {
             val group = coordinate.substringBefore(':')
-            val key = groupKeys.firstOrNull { group == it || group.startsWith(it) }
+            val key = groupKeys.firstOrNull { group.startsWith(it) }
             if (key == null) {
                 unmapped += group
                 continue
             }
-            byProject.getOrPut(groups.getValue(key).getValue("project")) { sortedSetOf() } += coordinate
+            val meta = groups.getValue(key)
+            val project = meta.getValue("project")
+            metaByProject[project] = meta
+            byProject.getOrPut(project) { sortedSetOf() } += coordinate
         }
 
         if (unmapped.isNotEmpty()) {
@@ -128,8 +129,25 @@ abstract class GenerateOssLicensesTask : DefaultTask() {
             )
         }
 
+        val assetsDir = assetsRoot.get().asFile
+        val brokenLicenses = metaByProject.values.mapNotNull { meta ->
+            val licenseId = meta.getValue("license")
+            val license = licenses[licenseId]
+                ?: return@mapNotNull "${meta["project"]}: 未定義のライセンス id '$licenseId'"
+            val text = assetsDir.resolve(license.getValue("asset"))
+            if (text.isFile) null else "${meta["project"]}: 全文が見つかりません ($text)"
+        }
+        if (brokenLicenses.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("ライセンス定義に不備があります:")
+                    brokenLicenses.forEach { appendLine("  - $it") }
+                },
+            )
+        }
+
         val entries = byProject.map { (project, artifacts) ->
-            val meta = groups.values.first { it["project"] == project }
+            val meta = metaByProject.getValue(project)
             mapOf(
                 "project" to project,
                 "url" to meta["url"],
@@ -166,6 +184,7 @@ androidComponents {
         ) {
             artifactCoordinates.set(coordinates)
             knownLicenses.set(layout.projectDirectory.file("licenses/known-licenses.json"))
+            assetsRoot.set(layout.projectDirectory.dir("src/main/assets"))
         }
 
         variant.sources.assets?.addGeneratedSourceDirectory(

@@ -1,6 +1,5 @@
 package com.example.zenjiro74.irowokiku.mapping
 
-import kotlin.math.ln
 import kotlin.math.pow
 
 /**
@@ -24,20 +23,17 @@ class FrequencyMapping(
 
     private val ratio = (maxFrequencyHz / minFrequencyHz).toDouble()
 
-    /** [colorfulness] に対応する周波数(Hz)。レンジ外はクランプする。 */
-    fun toFrequency(colorfulness: Float): Float {
-        val t = ((colorfulness - minColorfulness) / (maxColorfulness - minColorfulness))
+    /**
+      * [colorfulness] がレンジのどこにあるか (0..1)。レンジ外はクランプする。
+      * 周波数と HUD のバー位置は両方これを起点に決まるので、対数の往復が要らない。
+      */
+    fun normalizedPosition(colorfulness: Float): Float =
+        ((colorfulness - minColorfulness) / (maxColorfulness - minColorfulness))
             .coerceIn(0f, 1f)
-        return (minFrequencyHz * ratio.pow(t.toDouble())).toFloat()
-    }
 
-    /** [frequencyHz] がレンジのどこにあるか (0..1)。HUD のバー表示用。 */
-    fun normalizedPosition(frequencyHz: Float): Float {
-        if (frequencyHz <= 0f) return 0f
-        return (ln(frequencyHz / minFrequencyHz.toDouble()) / ln(ratio))
-            .toFloat()
-            .coerceIn(0f, 1f)
-    }
+    /** [colorfulness] に対応する周波数(Hz)。レンジ外はクランプする。 */
+    fun toFrequency(colorfulness: Float): Float =
+        (minFrequencyHz * ratio.pow(normalizedPosition(colorfulness).toDouble())).toFloat()
 
     companion object {
         const val DEFAULT_MIN_FREQUENCY_HZ = 110f

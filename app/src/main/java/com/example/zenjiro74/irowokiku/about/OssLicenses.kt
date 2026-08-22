@@ -7,7 +7,6 @@ import org.json.JSONObject
 data class OssLicense(
     val id: String,
     val name: String,
-    val url: String,
     val textAsset: String,
 )
 
@@ -24,12 +23,29 @@ data class OssEntry(
  *
  * 生成側は app/build.gradle.kts の GenerateOssLicensesTask。収録物の列挙は解決済みの
  * 依存グラフから自動で行われるので、この一覧は実際に APK に入っているものと一致する。
+ *
+ * 中身はビルド時に確定していて実行中に変わらないため、一度読んだら保持する。
+ * 画面を開き直すたびに asset の読み直しと JSON パースが走るのを避ける。
  */
 object OssLicenses {
 
     private const val MANIFEST_ASSET = "oss_licenses.json"
 
-    fun load(assets: AssetManager): List<OssEntry> {
+    @Volatile
+    private var cachedEntries: List<OssEntry>? = null
+
+    private val cachedTexts = mutableMapOf<String, String>()
+
+    fun load(assets: AssetManager): List<OssEntry> =
+        cachedEntries ?: parse(assets).also { cachedEntries = it }
+
+    @Synchronized
+    fun readLicenseText(assets: AssetManager, license: OssLicense): String =
+        cachedTexts.getOrPut(license.id) {
+            assets.open(license.textAsset).bufferedReader().use { it.readText() }
+        }
+
+    private fun parse(assets: AssetManager): List<OssEntry> {
         val root = JSONObject(assets.open(MANIFEST_ASSET).bufferedReader().use { it.readText() })
 
         val licenses = root.getJSONObject("licenses").let { json ->
@@ -38,7 +54,6 @@ object OssLicenses {
                 OssLicense(
                     id = id,
                     name = license.getString("name"),
-                    url = license.getString("url"),
                     textAsset = license.getString("asset"),
                 )
             }
@@ -56,7 +71,4 @@ object OssLicenses {
             )
         }
     }
-
-    fun readLicenseText(assets: AssetManager, license: OssLicense): String =
-        assets.open(license.textAsset).bufferedReader().use { it.readText() }
 }

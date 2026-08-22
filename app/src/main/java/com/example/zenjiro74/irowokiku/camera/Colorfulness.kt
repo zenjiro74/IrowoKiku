@@ -10,7 +10,19 @@ data class FrameStats(
     /** 平均輝度 (0-255)。暗所でノイズが指標を押し上げるのを弾くために使う。 */
     val meanLuma: Float,
 ) {
+    /**
+     * この [colorfulness] を信用してよいか。
+     *
+     * 暗所ではセンサノイズが rg/yb の分散を押し上げ、無彩色の被写体でも指標が跳ね上がる。
+     * 判定は指標を作る側に置き、利用側が閾値を再発明しなくて済むようにしている。
+     */
+    val isReliable: Boolean
+        get() = meanLuma >= MIN_RELIABLE_LUMA
+
     companion object {
+        /** これを下回る平均輝度 (0-255) では指標をノイズとみなす。 */
+        const val MIN_RELIABLE_LUMA = 30f
+
         val EMPTY = FrameStats(colorfulness = 0f, meanLuma = 0f)
     }
 }

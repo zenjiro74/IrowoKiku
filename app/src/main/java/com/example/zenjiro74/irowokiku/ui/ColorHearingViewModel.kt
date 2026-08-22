@@ -16,7 +16,7 @@ data class ColorHearingUiState(
     val isRunning: Boolean = false,
     val colorfulness: Float = 0f,
     val meanLuma: Float = 0f,
-    val frequencyHz: Float = FrequencyMapping.DEFAULT_MIN_FREQUENCY_HZ,
+    val frequencyHz: Float = 0f,
     /** 周波数レンジ内の位置 (0..1)。HUD のバー表示用。 */
     val pitchPosition: Float = 0f,
     /** 暗すぎて指標が信用できない状態。周波数を保持して音をミュートする。 */
@@ -38,7 +38,10 @@ class ColorHearingViewModel : ViewModel() {
     private val mapping = FrequencyMapping()
     private val smoother = ExponentialSmoother()
 
-    private val _uiState = MutableStateFlow(ColorHearingUiState())
+    // 既定値ではなく実際に使うマッピングの下端から始める。
+    private val _uiState = MutableStateFlow(
+        ColorHearingUiState(frequencyHz = mapping.minFrequencyHz),
+    )
     val uiState: StateFlow<ColorHearingUiState> = _uiState.asStateFlow()
 
     val analyzer = ColorfulnessAnalyzer(onResult = ::onFrame)
@@ -46,9 +49,8 @@ class ColorHearingViewModel : ViewModel() {
     private var frameCount = 0L
 
     private fun onFrame(stats: FrameStats) {
-        // 暗所ではセンサノイズが rg/yb の分散を押し上げ、無彩色の被写体でも
-        // 指標が跳ね上がる。信用できないので周波数を据え置いて音を止める。
-        val isTooDark = stats.meanLuma < DARK_LUMA_THRESHOLD
+        // 信用できない指標では周波数を据え置いて音を止める。判定は FrameStats 側にある。
+        val isTooDark = !stats.isReliable
         engine.setMuted(isTooDark)
 
         if (isTooDark) {
@@ -68,7 +70,7 @@ class ColorHearingViewModel : ViewModel() {
                 colorfulness = colorfulness,
                 meanLuma = stats.meanLuma,
                 frequencyHz = frequencyHz,
-                pitchPosition = mapping.normalizedPosition(frequencyHz),
+                pitchPosition = mapping.normalizedPosition(colorfulness),
                 isTooDark = false,
             )
         }
@@ -88,8 +90,10 @@ class ColorHearingViewModel : ViewModel() {
         )
     }
 
-    fun setExposureLocked(locked: Boolean) {
-        _uiState.update { it.copy(isExposureLocked = locked) }
+    /** メソッド参照で渡せるようにしておく。ラムダを都度作ると HUD 更新のたびに
+     *  ボタンが再コンポーズされてしまう。 */
+    fun toggleExposureLock() {
+        _uiState.update { it.copy(isExposureLocked = !it.isExposureLocked) }
     }
 
     fun toggle() {
@@ -114,8 +118,5 @@ class ColorHearingViewModel : ViewModel() {
     private companion object {
         const val TAG = "IrowoKiku"
         const val LOG_INTERVAL_FRAMES = 15L
-
-        /** これを下回る平均輝度 (0-255) では指標をノイズとみなす。 */
-        const val DARK_LUMA_THRESHOLD = 30f
     }
 }
